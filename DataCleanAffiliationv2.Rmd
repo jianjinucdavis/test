@@ -1,0 +1,40 @@
+---
+title: "DataCleaning2"
+author: "JJ"
+date: "Monday, October 27, 2014"
+output: html_document
+---
+
+```{r}
+library(dplyr)
+```
+
+* The .ctr columns are not true centered value in affClean... 
+
+* import data
+```{r}
+grmrec.df <- read.csv("./CleanData//grmrec.df.csv")
+names(grmrec.df)
+hud.df <- read.csv("./CleanData//hud.df.csv")
+names(hud.df)
+```
+
+* clean the grmrec.df
+
+```{r, echo=FALSE}
+names(grmrec.df)
+# remove all columns containing ".ctr"
+
+grmrec.df.cleancol <- select(grmrec.df, -matches("ctr"))
+write.csv(grmrec.df.cleancol, "./CleanData/grmrec.df.cleancol.csv", row.names = FALSE)
+```
+
+
+* clean hud.df
+```{r}
+names(hud.df)
+hud.df.cleancol <- select(hud.df, -matches("ctr"))
+names(hud.df.cleancol)
+write.csv(hud.df.cleancol, "./CleanData/hud.df.cleancol.csv", row.names = FALSE)
+```
+
