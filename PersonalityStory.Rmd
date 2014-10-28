@@ -240,12 +240,95 @@ summary(hud.personality.scaled.lm)
 
 * plotting
 ```{r}
+hud.newdata <- expand.grid(MatrilineSizePre.scaled = -1:1, hud.pre.scaled = -1:1, 
+                           ProportionMatrilineRemoved.scaled = -1:1,
+                           ExcitabilityPre.scaled = -1:1,
+                           ConfidencePre.scaled = -1:1,
+                           SociabilityPre.scaled = -1:1)
+hud.post.hat <- predict(hud.personality.scaled.lm, hud.newdata)
 
+hud.newdata.predicted <- data.frame(cbind(hud.newdata, hud.post.hat))
 
+hud.exc <- aggregate(hud.post.hat ~ 
+                       ProportionMatrilineRemoved.scaled + ExcitabilityPre.scaled,
+          hud.newdata.predicted, mean)
+factor(hud.exc$ExcitabilityPre.scaled)
+hud.exc$ExcitabilityPre.scaled <- factor(hud.exc$ExcitabilityPre.scaled, 
+                                         labels = c("Low Excitability", 
+                                                  "Average Excitability",
+                                                  "High Excitability"))
 
+hud.soc <- aggregate(hud.post.hat ~ 
+                       ProportionMatrilineRemoved.scaled + SociabilityPre.scaled,
+                     hud.newdata.predicted, mean)
+hud.soc$SociabilityPre.scaled <- factor(hud.soc$SociabilityPre.scaled,
+                                        labels = c("Low Sociability", 
+                                                  "Average Sociability",
+                                                  "High Sociability"))
 ```
 
+* plot Excitability
+```{r}
+gp <- ggplot(hud.exc, 
+             aes(x = ProportionMatrilineRemoved.scaled, y = hud.post.hat, 
+                 group = ExcitabilityPre.scaled, colour = ExcitabilityPre.scaled))
 
+hud.exc <- gp + geom_line(aes(linetype = ExcitabilityPre.scaled), size = 1) + theme_bw() + 
+  
+  # change axis labels here
+  
+  xlab("Proportion of Matriline being Removed") +
+  ylab("Levels of huddling (PostRemoval)") + 
+  
+  theme(text = element_text(size=11), axis.text.x = element_text(vjust=1), 
+        legend.position=c(0.20, 0.90), legend.text=element_text(size=10), 
+        legend.title=element_text(size=10),
+        strip.text = element_text(size = 10)) +
+  #eliminates background, gridlines, and chart border
+  theme(
+    plot.background = element_blank()
+    ,panel.grid.major = element_blank()
+    ,panel.grid.minor = element_blank()
+    ,panel.border = element_blank()
+  ) +
+  
+  #draws x and y axis line
+  theme(axis.line = element_line(color = 'black'))
+
+hud.exc
+```
+
+* plot Sociability
+```{r}
+gp <- ggplot(hud.soc, 
+             aes(x = ProportionMatrilineRemoved.scaled, y = hud.post.hat, 
+                 group = SociabilityPre.scaled, colour = SociabilityPre.scaled))
+
+hud.soc <- gp + geom_line(aes(linetype = SociabilityPre.scaled), size = 1) + theme_bw() + 
+  
+  # change axis labels here
+  
+  xlab("Proportion of Matriline being Removed") +
+  ylab("Levels of huddling (PostRemoval)") + 
+  
+  theme(text = element_text(size=11), axis.text.x = element_text(vjust=1), 
+        legend.position=c(0.90, 0.15), legend.text=element_text(size=10), 
+        legend.title=element_text(size=10),
+        strip.text = element_text(size = 10)) +
+  #eliminates background, gridlines, and chart border
+  theme(
+    plot.background = element_blank()
+    ,panel.grid.major = element_blank()
+    ,panel.grid.minor = element_blank()
+    ,panel.border = element_blank()
+  ) +
+  
+  #draws x and y axis line
+  theme(axis.line = element_line(color = 'black'))
+
+hud.soc
+
+```
 
 
 ## Huddle with Kin
@@ -264,5 +347,62 @@ hudKin.personality.lm <- lm(hudKin.post ~ hudKin.pre * Age +
 summary(hudKin.personality.lm)
 anova(hudKin.personality.lm, hudKin.control.lm)
 
+```
+
+* centered model
+```{r}
+hudkin.personality.scaled.lm <- lm(hudKin.post ~ hudKin.pre.scaled * Age.scaled +
+                      hudKin.pre.scaled * MatrilineSizePre.scaled + 
+                          ExcitabilityPre.scaled * ProportionMatrilineRemoved.scaled +
+                          + ConfidencePre.scaled + 
+                            SociabilityPre.scaled,
+                        data = hud.df.scaled)
+summary(hudkin.personality.scaled.lm)
+```
+
+* plot Exc x separation
+```{r}
+hudkin.newdata <- expand.grid(hudKin.pre.scaled = -1:1, Age.scaled = -1:1,
+                              MatrilineSizePre.scaled = -1:1, 
+                              ProportionMatrilineRemoved.scaled = -1:1,
+                              ExcitabilityPre.scaled = -1:1,
+                              ConfidencePre.scaled = -1:1,
+                              SociabilityPre.scaled = -1:1)
+
+hudKin.post.hat <- predict(hudkin.personality.scaled.lm, hudkin.newdata)
+hudkin.newdata.predicted <- data.frame(cbind(hudKin.post.hat, hudkin.newdata))
+hudkin.plot.data <- 
+  aggregate(hudKin.post.hat ~ ExcitabilityPre.scaled + ProportionMatrilineRemoved.scaled,
+          hudkin.newdata.predicted, mean)
+hudkin.plot.data$ExcitabilityPre.scaled <- 
+  factor(hudkin.plot.data$ExcitabilityPre.scaled, 
+         labels = c("Low Excitability", "Average Excitability", "High Excitability"))
+names(hudkin.plot.data)
+gp <- ggplot(hudkin.plot.data, 
+       aes(x = ProportionMatrilineRemoved.scaled, y = hudKin.post.hat, 
+           group = ExcitabilityPre.scaled, colour = ExcitabilityPre.scaled))
+hudKin.plot <- gp + geom_line(aes(linetype = ExcitabilityPre.scaled), size = 1) + 
+  theme_bw() + 
+  
+  # change axis labels here
+  
+  xlab("Proportion of Matriline being Removed") +
+  ylab("Levels of huddling with Kin (PostRemoval)") + 
+  
+  theme(text = element_text(size=11), axis.text.x = element_text(vjust=1), 
+        legend.position=c(0.20, 0.85), legend.text=element_text(size=10), 
+        legend.title=element_text(size=10),
+        strip.text = element_text(size = 10)) +
+  #eliminates background, gridlines, and chart border
+  theme(
+    plot.background = element_blank()
+    ,panel.grid.major = element_blank()
+    ,panel.grid.minor = element_blank()
+    ,panel.border = element_blank()
+  ) +
+  
+  #draws x and y axis line
+  theme(axis.line = element_line(color = 'black'))
+hudKin.plot
 
 ```
