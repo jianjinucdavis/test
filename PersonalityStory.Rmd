@@ -211,9 +211,12 @@ hud.soc$SociabilityPre.scaled <-
 
 
 ```{r plot Excitability, echo = FALSE}
-gp <- ggplot(hud.exc, 
-             aes(x = ProportionMatrilineRemoved.scaled, y = hud.post.hat, 
-                 group = ExcitabilityPre.scaled, colour = ExcitabilityPre.scaled))
+gp <- 
+  ggplot(hud.exc,
+         aes(x = ProportionMatrilineRemoved.scaled, 
+             y = hud.post.hat,
+             group = ExcitabilityPre.scaled, 
+             colour = ExcitabilityPre.scaled))
 
 hud.exc <- gp + geom_line(aes(linetype = ExcitabilityPre.scaled), size = 1) + theme_bw() + 
   
@@ -273,21 +276,19 @@ hud.soc
 ```
 
 
-## Huddle with Kin
+#### Huddle with Kin
 
-* centered model
-```{r}
-hudkin.personality.scaled.lm <- lm(hudKin.post ~ hudKin.pre.scaled * Age.scaled +
-                      hudKin.pre.scaled * MatrilineSizePre.scaled + 
-                          ExcitabilityPre.scaled * ProportionMatrilineRemoved.scaled +
-                          + ConfidencePre.scaled + 
-                            SociabilityPre.scaled,
-                        data = hud.df.scaled)
-summary(hudkin.personality.scaled.lm)
+```{r: centered model, echo=FALSE}
+hudkin.personality.scaled.lm <- 
+  lm(hudKin.post ~ hudKin.pre.scaled * Age.scaled +
+       hudKin.pre.scaled * MatrilineSizePre.scaled +
+       ExcitabilityPre.scaled * ProportionMatrilineRemoved.scaled + 
+       ConfidencePre.scaled + SociabilityPre.scaled,
+     data = hud.df.scaled)
 ```
+`r sjt.lm(hudkin.personality.scaled.lm, no.output = TRUE)$knitr`
 
-* plot Exc x separation
-```{r}
+```{r plot Exc x separation, echo=FALSE}
 hudkin.newdata <- expand.grid(hudKin.pre.scaled = -1:1, Age.scaled = -1:1,
                               MatrilineSizePre.scaled = -1:1, 
                               ProportionMatrilineRemoved.scaled = -1:1,
@@ -331,9 +332,4 @@ hudKin.plot <- gp + geom_line(aes(linetype = ExcitabilityPre.scaled), size = 1) 
   theme(axis.line = element_line(color = 'black'))
 hudKin.plot
 
-```
-
-
-```{r: export tables sjPlot, echo=FALSE}
-sjt.lm(grmrec.personality.scaled.lm, grmrecNonkin.personality.scaled.lm, hud.personality.scaled.lm, hudkin.personality.scaled.lm)
 ```
