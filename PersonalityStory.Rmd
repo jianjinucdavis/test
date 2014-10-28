@@ -99,32 +99,38 @@ grmrecNonkin.personality.scaled.lm <-
        ConfidencePre.scaled  + SociabilityPre.scaled, 
      data = grmrec.df.scaled)
 ```
-`r sjt.lm(grmrec.personality.scaled.lm, no.output = TRUE)$knitr`
+`r sjt.lm(grmrecNonkin.personality.scaled.lm, no.output = TRUE)$knitr`
+The effects of pre-removal levels of received grooming from kin on post-removal levels of received grooming from kin depend on individuals' Excitability (b = `r grmrecNonkin.personality.scaled.lm$coefficients[[6]]`, p = `r summary(grmrecNonkin.personality.scaled.lm)[[4]][6,4]`). For each increase in Excitability, post-removal levels of received grooming from kin is expected to increase `r grmrecNonkin.personality.scaled.lm$coefficients[[6]]` more with each increase in pre-removal levels of received grooming from kin. This indicates that compared with less excitable individuals, highly excitable individuals received levels of received grooming from kin that is closer to the pre-removal level after social separation. 
+
+Within matriline, highly excitable individuals received more grooming from their kin. Its underlying mechanism may be differed from that underlying the phenomenon that highly confident i9ndividuals received more grooming across matrilines. 
+
+* Possible explanations:
+* maintaining group stability maybe differnt from maintaining matriline stability
+* groom excitable individuals: calm them down? 
 
 
 ```{r Plotting groom receive from nonkin, echo=FALSE}
 # new data
-grmrecNonkin.pre.scaled <- -1:1
-ExcitabilityPre.scaled <- -1:1
-ConfidencePre.scaled <- -1:1
-SociabilityPre.scaled <- -1:1
+grmrecNonkin.newdata <- expand.grid(grmrecNonkin.pre.scaled = -1:1,
+                                    ExcitabilityPre.scaled = -1:1,
+                                    ConfidencePre.scaled = -1:1,
+                                    SociabilityPre.scaled = -1:1)
 
-grmrecNonkin.newdata <- expand.grid(grmrecNonkin.pre.scaled, ExcitabilityPre.scaled,
-                       ConfidencePre.scaled, SociabilityPre.scaled)
-names(grmrecNonkin.newdata) <- c("grmrecNonkin.pre.scaled", "ExcitabilityPre.scaled", 
-                    "ConfidencePre.scaled", 
-                    "SociabilityPre.scaled")
-grmrecNonkin.post.hat <- predict(grmrecNonkin.personality.scaled.lm, grmrecNonkin.newdata)
-grmrecNonkin.newdata.predicted <- cbind(grmrecNonkin.post.hat, grmrecNonkin.newdata)
+grmrecNonkin.post.hat <- 
+  predict(grmrecNonkin.personality.scaled.lm, grmrecNonkin.newdata)
+
+grmrecNonkin.newdata.predicted <- 
+  cbind(grmrecNonkin.post.hat, grmrecNonkin.newdata)
+
 # aggregate
 grmrecNonkin.plotdata <- aggregate(grmrecNonkin.post.hat ~ 
             ExcitabilityPre.scaled + grmrecNonkin.pre.scaled,
           grmrecNonkin.newdata.predicted, mean)
+
 grmrecNonkin.plotdata$ExcitabilityPre.scaled <- 
   factor(grmrecNonkin.plotdata$ExcitabilityPre.scaled, 
        labels = c("Low Excitability", "Average Excitability", "High Excitability"))
 
-jpeg("./output/grmrecnonkin.jpg")
 gp <- ggplot(grmrecNonkin.plotdata, 
        aes(x = grmrecNonkin.pre.scaled, y = grmrecNonkin.post.hat, 
            colour = ExcitabilityPre.scaled, group = ExcitabilityPre.scaled))
@@ -147,28 +153,26 @@ grmrecNonkin.plot <- gp + geom_line(aes(linetype = ExcitabilityPre.scaled), size
   theme(axis.line = element_line(color = 'black'))
 
 grmrecNonkin.plot
-dev.off()
-grmrecNonkin.plot
 ```
 
 
-# Huddle
+### Huddle
 
-## Huddle in general
+#### Huddle in general
 
-* Centered model
-```{r, echo=FALSE}
-hud.personality.scaled.lm <- lm(hud.post ~ MatrilineSizePre.scaled * hud.pre.scaled + 
-                          ExcitabilityPre.scaled * ProportionMatrilineRemoved.scaled +
-                          ConfidencePre.scaled + 
-                            SociabilityPre.scaled * ProportionMatrilineRemoved.scaled,
-                        data = hud.df.scaled)
+```{r Centered model, echo=FALSE}
+hud.personality.scaled.lm <- 
+  lm(hud.post ~ MatrilineSizePre.scaled * hud.pre.scaled + 
+       ExcitabilityPre.scaled * ProportionMatrilineRemoved.scaled +
+       ConfidencePre.scaled + 
+       SociabilityPre.scaled * ProportionMatrilineRemoved.scaled,
+     data = hud.df.scaled)
 summary(hud.personality.scaled.lm)
 
 ```
 
-* plotting
-```{r}
+
+```{r plotting, echo=FALSE}
 hud.newdata <- expand.grid(MatrilineSizePre.scaled = -1:1, hud.pre.scaled = -1:1, 
                            ProportionMatrilineRemoved.scaled = -1:1,
                            ExcitabilityPre.scaled = -1:1,
