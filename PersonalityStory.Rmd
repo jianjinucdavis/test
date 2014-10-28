@@ -1,0 +1,268 @@
+---
+title: "personality models"
+author: "JJ"
+date: "Thursday, October 23, 2014"
+output: html_document
+---
+
+* Import Data
+```{r, echo=FALSE}
+# grmrec.df <- read.csv("./CleanData//grmrec.df.csv")
+
+
+# hud.df <- read.csv("./CleanData//hud.df.csv")
+
+grmrec.df <- read.csv("./CleanData//grmrec.df.cleancol.csv")
+hud.df <- read.csv("./CleanData//hud.df.cleancol.csv")
+```
+
+* Center Continuous variables
+```{r}
+names(grmrec.df)
+names(grmrec.df)[c(2,3,4,10, 13:19)]
+a <- data.frame(scale(grmrec.df[,c(2,3,4,10, 13:19)], center = TRUE, scale = TRUE))
+names(a) <- paste(names(a), "scaled", sep = ".")
+grmrec.df.scaled <- cbind(grmrec.df, a)
+summary(grmrec.df.scaled)
+
+
+names(hud.df)
+b <- data.frame(scale(hud.df[, c(2:4, 10, 13:19)], center = TRUE, scale = TRUE))
+names(b) <- paste(names(b), "scaled", sep = ".")
+hud.df.scaled <- cbind(hud.df, b)
+summary(hud.df.scaled)
+```
+
+
+# groom Receive in general
+```{r, echo=FALSE}
+names(grmrec.df)
+# null model
+grmrec.null.lm <- lm(grmrec.post ~ grmrec.pre,
+                        data = grmrec.df)
+summary(grmrec.null.lm)
+```
+
+
+```{r}
+# personality x pre aff interaction 
+grmrec.personality.lm <- lm(grmrec.post ~ grmrec.pre + 
+                          ExcitabilityPre  + SociabilityPre
+                          + ConfidencePre * grmrec.pre ,
+                        data = grmrec.df)
+summary(grmrec.personality.lm)
+anova(grmrec.personality.lm, grmrec.null.lm)
+
+```
+
+Depending on grmrec.pre, Confidence affect grmrec post differently.
+
+
+scaled lm model
+```{r}
+grmrec.personality.scaled.lm <- lm(grmrec.post ~ grmrec.pre.scaled + 
+                          ExcitabilityPre.scaled  + SociabilityPre.scaled
+                          + ConfidencePre.scaled * grmrec.pre.scaled ,
+                        data = grmrec.df.scaled)
+summary(grmrec.personality.scaled.lm)
+```
+
+
+## Plot the effects
+```{r: plot the Confidence x grmrec.pre}
+####New data
+grmrec.pre.scaled <- -1:1
+SociabilityPre.scaled <- -1:1
+ConfidencePre.scaled <- -1:1
+ExcitabilityPre.scaled <- -1:1
+
+newgrmrec.personality <- expand.grid(grmrec.pre.scaled, 
+                       SociabilityPre.scaled, 
+                       ConfidencePre.scaled, 
+                       ExcitabilityPre.scaled)
+names(newgrmrec.personality) <- c("grmrec.pre.scaled", 
+                    "SociabilityPre.scaled", 
+                    "ConfidencePre.scaled", 
+                    "ExcitabilityPre.scaled")
+
+#### predict y-hat
+grmrec.post.hat <- predict(grmrec.personality.scaled.lm, newgrmrec.personality)
+newgrmrec.personality.predict <- cbind(grmrec.post.hat, newgrmrec.personality)
+
+#### plot interaction between ConfidencePre and grmrec.pre
+grmrec.post.newdata <- aggregate(grmrec.post.hat ~ ConfidencePre.scaled + grmrec.pre.scaled, 
+                              newgrmrec.personality.predict, mean)
+
+grmrec.post.newdata$ConfidencePre.scaled <- factor(grmrec.post.newdata$ConfidencePre.scaled,
+                                          labels = c("Low Confidence", 
+                                                     "Average Confidence", 
+                                                     "High Confidence"))
+#### plotting
+library(ggplot2)
+gp <- ggplot(grmrec.post.newdata, 
+             aes(x = grmrec.pre.scaled, y = grmrec.post.hat, 
+                 colour = ConfidencePre.scaled, group = ConfidencePre.scaled))
+
+grmrec.plot <- gp + geom_line(aes(linetype = ConfidencePre.scaled), size = 1) + theme_bw() + 
+  xlab("Levels of Received Grooming (PreRemoval)") +
+  ylab("Levels of Received Grooming (PostRemoval)") + 
+  theme(text = element_text(size=11), axis.text.x = element_text(vjust=1), 
+        legend.position=c(0.20, 0.90), legend.text=element_text(size=10), 
+        legend.title=element_text(size=10),
+        strip.text = element_text(size = 10)) +
+  #eliminates background, gridlines, and chart border
+  theme(
+    plot.background = element_blank()
+    ,panel.grid.major = element_blank()
+    ,panel.grid.minor = element_blank()
+    ,panel.border = element_blank()
+  ) +
+  
+  #draws x and y axis line
+  theme(axis.line = element_line(color = 'black'))
+
+grmrec.plot
+```
+
+
+
+
+
+# groom receive from nonkin
+```{r}
+grmrecNonkin.null.lm <- lm(grmrecNonkin.post ~ grmrecNonkin.pre, data = grmrec.df)
+summary(grmrecNonkin.null.lm)
+
+
+names(grmrec.df)
+grmrecNonkin.personality.lm <- lm(grmrecNonkin.post ~ grmrecNonkin.pre +
+                          ExcitabilityPre * grmrecNonkin.pre +
+                          + ConfidencePre  + 
+                            SociabilityPre ,
+                        data = grmrec.df)
+summary(grmrecNonkin.personality.lm)
+anova(grmrecNonkin.personality.lm, grmrecNonkin.null.lm)
+
+```
+
+* centered model
+```{r}
+names(grmrec.df.scaled)
+grmrecNonkin.personality.scaled.lm <- lm(grmrecNonkin.post ~ grmrecNonkin.pre.scaled +
+                          ExcitabilityPre.scaled * grmrecNonkin.pre.scaled +
+                          + ConfidencePre.scaled  + 
+                            SociabilityPre.scaled ,
+                        data = grmrec.df.scaled)
+summary(grmrecNonkin.personality.scaled.lm)
+library(car)
+sqrt(vif(grmrecNonkin.personality.scaled.lm))
+```
+
+* plotting
+```{r}
+# new data
+grmrecNonkin.pre.scaled <- -1:1
+ExcitabilityPre.scaled <- -1:1
+ConfidencePre.scaled <- -1:1
+SociabilityPre.scaled <- -1:1
+
+grmrecNonkin.newdata <- expand.grid(grmrecNonkin.pre.scaled, ExcitabilityPre.scaled,
+                       ConfidencePre.scaled, SociabilityPre.scaled)
+names(grmrecNonkin.newdata) <- c("grmrecNonkin.pre.scaled", "ExcitabilityPre.scaled", 
+                    "ConfidencePre.scaled", 
+                    "SociabilityPre.scaled")
+grmrecNonkin.post.hat <- predict(grmrecNonkin.personality.scaled.lm, grmrecNonkin.newdata)
+grmrecNonkin.newdata.predicted <- cbind(grmrecNonkin.post.hat, grmrecNonkin.newdata)
+# aggregate
+grmrecNonkin.plotdata <- aggregate(grmrecNonkin.post.hat ~ 
+            ExcitabilityPre.scaled + grmrecNonkin.pre.scaled,
+          grmrecNonkin.newdata.predicted, mean)
+grmrecNonkin.plotdata$ExcitabilityPre.scaled <- 
+  factor(grmrecNonkin.plotdata$ExcitabilityPre.scaled, 
+       labels = c("Low Excitability", "Average Excitability", "High Excitability"))
+
+gp <- ggplot(grmrecNonkin.plotdata, 
+       aes(x = grmrecNonkin.pre.scaled, y = grmrecNonkin.post.hat, 
+           colour = ExcitabilityPre.scaled, group = ExcitabilityPre.scaled))
+grmrecNonkin.plot <- gp + geom_line(aes(linetype = ExcitabilityPre.scaled), size = 1) + theme_bw() + 
+  xlab("Levels of Received Grooming from Kin (PreRemoval)") +
+  ylab("Levels of Received Grooming from Kin (PostRemoval)") + 
+  theme(text = element_text(size=11), axis.text.x = element_text(vjust=1), 
+        legend.position=c(0.20, 0.90), legend.text=element_text(size=10), 
+        legend.title=element_text(size=10),
+        strip.text = element_text(size = 10)) +
+  #eliminates background, gridlines, and chart border
+  theme(
+    plot.background = element_blank()
+    ,panel.grid.major = element_blank()
+    ,panel.grid.minor = element_blank()
+    ,panel.border = element_blank()
+  ) +
+  
+  #draws x and y axis line
+  theme(axis.line = element_line(color = 'black'))
+
+grmrecNonkin.plot
+
+```
+
+
+# Huddle
+
+## Huddle in general
+```{r, echo=FALSE}
+hud.control.lm <- lm(hud.post ~   
+                       MatrilineSizePre * hud.pre,
+                     data = hud.df)
+summary(hud.control.lm)
+
+hud.personality.lm <- lm(hud.post ~ MatrilineSizePre * hud.pre + 
+                          ExcitabilityPre * ProportionMatrilineRemoved +
+                          ConfidencePre + 
+                            SociabilityPre * ProportionMatrilineRemoved,
+                        data = hud.df)
+summary(hud.personality.lm)
+anova(hud.personality.lm, hud.control.lm)
+```
+
+* Centered model
+```{r}
+
+names(hud.df.scaled)
+hud.personality.scaled.lm <- lm(hud.post ~ MatrilineSizePre.scaled * hud.pre.scaled + 
+                          ExcitabilityPre.scaled * ProportionMatrilineRemoved.scaled +
+                          ConfidencePre.scaled + 
+                            SociabilityPre.scaled * ProportionMatrilineRemoved.scaled,
+                        data = hud.df.scaled)
+summary(hud.personality.scaled.lm)
+
+```
+
+* plotting
+```{r}
+
+
+
+```
+
+
+
+
+## Huddle with Kin
+```{r, echo=FALSE}
+
+hudKin.control.lm <- lm(hudKin.post ~ hudKin.pre * Age +
+                          hudKin.pre * MatrilineSizePre, data = hud.df)
+summary(hudKin.control.lm)
+
+hudKin.personality.lm <- lm(hudKin.post ~ hudKin.pre * Age +
+                      hudKin.pre * MatrilineSizePre + 
+                          ExcitabilityPre * ProportionMatrilineRemoved +
+                          + ConfidencePre + 
+                            SociabilityPre,
+                        data = hud.df)
+summary(hudKin.personality.lm)
+anova(hudKin.personality.lm, hudKin.control.lm)
+
+
+```
