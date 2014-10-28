@@ -170,6 +170,13 @@ hud.personality.scaled.lm <-
 ```
 `r sjt.lm(hud.personality.scaled.lm, no.output = TRUE)$knitr`
 
+Controlling for pre-removal levels of huddling, proportion of matriline being removed interacted with Excitability (b = `r hud.personality.scaled.lm$coefficients[[9]]`, p = `r summary(grmrecNonkin.personality.scaled.lm)[[4]][9,4]`) and Sociability (b = `r hud.personality.scaled.lm$coefficients[[10]]`, p = `r summary(grmrecNonkin.personality.scaled.lm)[[4]][10,4]`) respectively to affect post-removal levels of huddling. For each increase in Excitability, post-removal levels of huddling was expected to decrease `r abs(hud.personality.scaled.lm$coefficients[[9]])` with each increase in proportion of matriline being removed. For each increase in Sociability, post-removal levels of huddling was expected to incrase `r hud.personality.scaled.lm$coefficients[[10]]` with each incrase in proportion of matriline being removed. After a greater proportion of the matriline was removed, highly excitable individuals huddled less, compared with less excitable individuals; highly sociable individuals huddled more compared with less sociable individuals.
+
+* notes for discussion
+* coping: Personality by separation interaction
+* More stressful when a greater proportion of matriline was removed. Sociable-affiliation helps with coping with separation; Excitability: decrease in huddling. disenage.
+
+
 ```{r plotting, echo=FALSE}
 hud.newdata <- expand.grid(MatrilineSizePre.scaled = -1:1, hud.pre.scaled = -1:1, 
                            ProportionMatrilineRemoved.scaled = -1:1,
@@ -184,7 +191,7 @@ hud.exc <-
   aggregate(hud.post.hat ~ 
               ProportionMatrilineRemoved.scaled + ExcitabilityPre.scaled,
           hud.newdata.predicted, mean)
-factor(hud.exc$ExcitabilityPre.scaled)
+
 hud.exc$ExcitabilityPre.scaled <-
   factor(hud.exc$ExcitabilityPre.scaled, 
          labels = c("Low Excitability", 
