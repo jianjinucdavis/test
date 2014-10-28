@@ -167,10 +167,8 @@ hud.personality.scaled.lm <-
        ConfidencePre.scaled + 
        SociabilityPre.scaled * ProportionMatrilineRemoved.scaled,
      data = hud.df.scaled)
-summary(hud.personality.scaled.lm)
-
 ```
-
+`r sjt.lm(hud.personality.scaled.lm, no.output = TRUE)$knitr`
 
 ```{r plotting, echo=FALSE}
 hud.newdata <- expand.grid(MatrilineSizePre.scaled = -1:1, hud.pre.scaled = -1:1, 
@@ -182,26 +180,30 @@ hud.post.hat <- predict(hud.personality.scaled.lm, hud.newdata)
 
 hud.newdata.predicted <- data.frame(cbind(hud.newdata, hud.post.hat))
 
-hud.exc <- aggregate(hud.post.hat ~ 
-                       ProportionMatrilineRemoved.scaled + ExcitabilityPre.scaled,
+hud.exc <- 
+  aggregate(hud.post.hat ~ 
+              ProportionMatrilineRemoved.scaled + ExcitabilityPre.scaled,
           hud.newdata.predicted, mean)
 factor(hud.exc$ExcitabilityPre.scaled)
-hud.exc$ExcitabilityPre.scaled <- factor(hud.exc$ExcitabilityPre.scaled, 
-                                         labels = c("Low Excitability", 
-                                                  "Average Excitability",
-                                                  "High Excitability"))
+hud.exc$ExcitabilityPre.scaled <-
+  factor(hud.exc$ExcitabilityPre.scaled, 
+         labels = c("Low Excitability", 
+                    "Average Excitability",
+                    "High Excitability"))
 
-hud.soc <- aggregate(hud.post.hat ~ 
-                       ProportionMatrilineRemoved.scaled + SociabilityPre.scaled,
+hud.soc <- 
+  aggregate(hud.post.hat ~ 
+              ProportionMatrilineRemoved.scaled + SociabilityPre.scaled,
                      hud.newdata.predicted, mean)
-hud.soc$SociabilityPre.scaled <- factor(hud.soc$SociabilityPre.scaled,
-                                        labels = c("Low Sociability", 
-                                                  "Average Sociability",
-                                                  "High Sociability"))
+hud.soc$SociabilityPre.scaled <- 
+  factor(hud.soc$SociabilityPre.scaled,
+         labels = c("Low Sociability", 
+                    "Average Sociability",
+                    "High Sociability"))
 ```
 
-* plot Excitability
-```{r}
+
+```{r plot Excitability, echo = FALSE}
 gp <- ggplot(hud.exc, 
              aes(x = ProportionMatrilineRemoved.scaled, y = hud.post.hat, 
                  group = ExcitabilityPre.scaled, colour = ExcitabilityPre.scaled))
@@ -231,8 +233,8 @@ hud.exc <- gp + geom_line(aes(linetype = ExcitabilityPre.scaled), size = 1) + th
 hud.exc
 ```
 
-* plot Sociability
-```{r}
+
+```{r plot Sociability, echo=FALSE}
 gp <- ggplot(hud.soc, 
              aes(x = ProportionMatrilineRemoved.scaled, y = hud.post.hat, 
                  group = SociabilityPre.scaled, colour = SociabilityPre.scaled))
