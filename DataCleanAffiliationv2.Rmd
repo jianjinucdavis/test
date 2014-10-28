@@ -38,3 +38,29 @@ names(hud.df.cleancol)
 write.csv(hud.df.cleancol, "./CleanData/hud.df.cleancol.csv", row.names = FALSE)
 ```
 
+#### scaling continuous variables
+* import data
+```{r}
+
+grmrec.df <- read.csv("./CleanData//grmrec.df.cleancol.csv")
+hud.df <- read.csv("./CleanData//hud.df.cleancol.csv")
+```
+
+* Center Continuous variables
+```{r}
+names(grmrec.df)
+names(grmrec.df)[c(2,3,4,10, 13:19)]
+a <- data.frame(scale(grmrec.df[,c(2,3,4,10, 13:19)], center = TRUE, scale = TRUE))
+names(a) <- paste(names(a), "scaled", sep = ".")
+grmrec.df.scaled <- cbind(grmrec.df, a)
+summary(grmrec.df.scaled)
+
+write.csv(grmrec.df.scaled, "./CleanData/grmrec.df.scaled.csv", row.names = FALSE)
+
+names(hud.df)
+b <- data.frame(scale(hud.df[, c(2:4, 10, 13:19)], center = TRUE, scale = TRUE))
+names(b) <- paste(names(b), "scaled", sep = ".")
+hud.df.scaled <- cbind(hud.df, b)
+summary(hud.df.scaled)
+write.csv(hud.df.scaled, "./CleanData/hud.df.scaled.csv", row.names = FALSE)
+```
