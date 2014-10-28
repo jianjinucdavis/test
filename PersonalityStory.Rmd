@@ -288,6 +288,9 @@ hudkin.personality.scaled.lm <-
 ```
 `r sjt.lm(hudkin.personality.scaled.lm, no.output = TRUE)$knitr`
 
+Excitability interacted with proportion of matriline being removed to affect post-removal levels of huddling with kin (b = `r hudkin.personality.scaled.lm$coefficients[[11]]`, p = `r summary(hudkin.personality.scaled.lm)[[4]][11,4]`). For each incrase in Excitability, post-removal levels of huddling with kin was expected to decrease `r abs(hudkin.personality.scaled.lm$coefficients[[11]])` for each incrase in proportion of matriline being removed. After a greater proportion of matriline being removed,  highly excitable individuals huddled significantly less compared with less excitable individuals.
+
+
 ```{r plot Exc x separation, echo=FALSE}
 hudkin.newdata <- expand.grid(hudKin.pre.scaled = -1:1, Age.scaled = -1:1,
                               MatrilineSizePre.scaled = -1:1, 
@@ -297,18 +300,31 @@ hudkin.newdata <- expand.grid(hudKin.pre.scaled = -1:1, Age.scaled = -1:1,
                               SociabilityPre.scaled = -1:1)
 
 hudKin.post.hat <- predict(hudkin.personality.scaled.lm, hudkin.newdata)
-hudkin.newdata.predicted <- data.frame(cbind(hudKin.post.hat, hudkin.newdata))
+
+
+hudkin.newdata.predicted <- 
+  data.frame(cbind(hudKin.post.hat, hudkin.newdata))
+
+
 hudkin.plot.data <- 
-  aggregate(hudKin.post.hat ~ ExcitabilityPre.scaled + ProportionMatrilineRemoved.scaled,
+  aggregate(hudKin.post.hat ~ 
+              ExcitabilityPre.scaled + ProportionMatrilineRemoved.scaled,
           hudkin.newdata.predicted, mean)
+
 hudkin.plot.data$ExcitabilityPre.scaled <- 
   factor(hudkin.plot.data$ExcitabilityPre.scaled, 
          labels = c("Low Excitability", "Average Excitability", "High Excitability"))
-names(hudkin.plot.data)
+
+
 gp <- ggplot(hudkin.plot.data, 
-       aes(x = ProportionMatrilineRemoved.scaled, y = hudKin.post.hat, 
-           group = ExcitabilityPre.scaled, colour = ExcitabilityPre.scaled))
-hudKin.plot <- gp + geom_line(aes(linetype = ExcitabilityPre.scaled), size = 1) + 
+       aes(x = ProportionMatrilineRemoved.scaled, 
+           y = hudKin.post.hat, 
+           group = ExcitabilityPre.scaled, 
+           colour = ExcitabilityPre.scaled))
+
+
+hudKin.plot <- gp + 
+  geom_line(aes(linetype = ExcitabilityPre.scaled), size = 1) + 
   theme_bw() + 
   
   # change axis labels here
