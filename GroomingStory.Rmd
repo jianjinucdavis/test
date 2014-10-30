@@ -1,0 +1,156 @@
+---
+title: "GroomingStory"
+author: "JJ"
+date: "Thursday, October 30, 2014"
+output: html_document
+---
+
+```{r setup, echo=FALSE, cache=FALSE}
+##  source: http://yihui.name/knitr/demo/output/
+## numbers >= 10^5 will be denoted in scientific notation,
+## and rounded to 2 digits 
+options(scipen = 1, digits = 2)
+```
+
+
+```{r import data, echo=FALSE}
+library(ggplot2)
+library(sjPlot)
+grmrec.df.scaled <- read.csv("./CleanData//grmrec.df.scaled.csv")
+hud.df.scaled <- read.csv("./CleanData//hud.df.scaled.csv")
+```
+
+
+### groom Receive in general
+
+```{r, echo = FALSE}
+grmrec.personality.scaled.lm <- lm(grmrec.post ~ grmrec.pre.scaled + 
+                          ExcitabilityPre.scaled  + SociabilityPre.scaled
+                          + ConfidencePre.scaled * grmrec.pre.scaled ,
+                        data = grmrec.df.scaled)
+```
+
+`r sjt.lm(grmrec.personality.scaled.lm, no.output = TRUE)$knitr`
+Preremoval levels of received grooming positively predicted post-removal levels of received grooming, but this effect depends on Confidence personality (B = `r grmrec.personality.scaled.lm$coefficients[[6]]`, p = `r summary(grmrec.personality.scaled.lm)[[4]][6,4]`). For each increase in pre-removal levels of received grooming, post-removal levels of received grooming was expected to increase `r grmrec.personality.scaled.lm$coefficients[[2]]`. But for each increase in Confidence, post-removal levels of received grooming was expected to increase `r grmrec.personality.scaled.lm$coefficients[[6]]` more. This indicates that pre-removal levels of received grooming is a better predictor for post-removal levels of received grooming for highly confident individuals. After social separation, compared with less confident individuals, highly confident individuals were able to maintain a level of received grooming that is closer to the level of received grooming before social separation. 
+
+* Notes for discussion: 
+* maintain group stability
+* cope with separation stress
+* What are the other monkeys looking for by grooming highly confident individuals? - protection? - ...
+
+```{r: plot the Confidence x grmrec.pre, echo=FALSE}
+#New data
+newgrmrec.personality <- expand.grid(grmrec.pre.scaled = -1:1, 
+                       SociabilityPre.scaled = -1:1, 
+                       ConfidencePre.scaled = -1:1, 
+                       ExcitabilityPre.scaled = -1:1)
+
+#### predict y-hat
+grmrec.post.hat <- predict(grmrec.personality.scaled.lm, newgrmrec.personality)
+newgrmrec.personality.predict <- cbind(grmrec.post.hat, newgrmrec.personality)
+
+#### plot interaction between ConfidencePre and grmrec.pre
+grmrec.post.newdata <- aggregate(grmrec.post.hat ~ 
+                                   ConfidencePre.scaled + grmrec.pre.scaled, 
+                              newgrmrec.personality.predict, mean)
+
+grmrec.post.newdata$ConfidencePre.scaled <- 
+  factor(grmrec.post.newdata$ConfidencePre.scaled,
+                                          labels = c("Low Confidence", 
+                                                     "Average Confidence", 
+                                                     "High Confidence"))
+```
+
+```{r, echo=FALSE}
+#### plotting
+gp <- ggplot(grmrec.post.newdata, 
+             aes(x = grmrec.pre.scaled, y = grmrec.post.hat, 
+                 colour = ConfidencePre.scaled, group = ConfidencePre.scaled))
+
+grmrec.plot <- gp + 
+  geom_line(aes(linetype = ConfidencePre.scaled), size = 1) + 
+  theme_bw() + 
+  xlab("Levels of Received Grooming (PreRemoval)") +
+  ylab("Levels of Received Grooming (PostRemoval)") + 
+  theme(text = element_text(size=11), axis.text.x = element_text(vjust=1), 
+        legend.position=c(0.20, 0.90), legend.text=element_text(size=10), 
+        legend.title=element_text(size=10),
+        strip.text = element_text(size = 10)) +
+  #eliminates background, gridlines, and chart border
+  theme(
+    plot.background = element_blank()
+    ,panel.grid.major = element_blank()
+    ,panel.grid.minor = element_blank()
+    ,panel.border = element_blank()
+  ) +
+  
+  #draws x and y axis line
+  theme(axis.line = element_line(color = 'black'))
+
+grmrec.plot
+```
+
+### groom receive from nonkin
+
+```{r centered model_groom received from nonkin, echo=FALSE}
+grmrecNonkin.personality.scaled.lm <- 
+  lm(grmrecNonkin.post ~ grmrecNonkin.pre.scaled + 
+       ExcitabilityPre.scaled * grmrecNonkin.pre.scaled +
+       ConfidencePre.scaled  + SociabilityPre.scaled, 
+     data = grmrec.df.scaled)
+```
+`r sjt.lm(grmrecNonkin.personality.scaled.lm, no.output = TRUE)$knitr`
+The effects of pre-removal levels of received grooming from kin on post-removal levels of received grooming from kin depend on individuals' Excitability (b = `r grmrecNonkin.personality.scaled.lm$coefficients[[6]]`, p = `r summary(grmrecNonkin.personality.scaled.lm)[[4]][6,4]`). For each increase in Excitability, post-removal levels of received grooming from kin is expected to increase `r grmrecNonkin.personality.scaled.lm$coefficients[[6]]` more with each increase in pre-removal levels of received grooming from kin. This indicates that compared with less excitable individuals, highly excitable individuals received levels of received grooming from kin that is closer to the pre-removal level after social separation. 
+
+Within matriline, highly excitable individuals received more grooming from their kin. Its underlying mechanism may be differed from that underlying the phenomenon that highly confident i9ndividuals received more grooming across matrilines. 
+
+* Possible explanations:
+* maintaining group stability maybe differnt from maintaining matriline stability
+* groom excitable individuals: calm them down? 
+
+
+```{r Plotting groom receive from nonkin, echo=FALSE}
+# new data
+grmrecNonkin.newdata <- expand.grid(grmrecNonkin.pre.scaled = -1:1,
+                                    ExcitabilityPre.scaled = -1:1,
+                                    ConfidencePre.scaled = -1:1,
+                                    SociabilityPre.scaled = -1:1)
+
+grmrecNonkin.post.hat <- 
+  predict(grmrecNonkin.personality.scaled.lm, grmrecNonkin.newdata)
+
+grmrecNonkin.newdata.predicted <- 
+  cbind(grmrecNonkin.post.hat, grmrecNonkin.newdata)
+
+# aggregate
+grmrecNonkin.plotdata <- aggregate(grmrecNonkin.post.hat ~ 
+            ExcitabilityPre.scaled + grmrecNonkin.pre.scaled,
+          grmrecNonkin.newdata.predicted, mean)
+
+grmrecNonkin.plotdata$ExcitabilityPre.scaled <- 
+  factor(grmrecNonkin.plotdata$ExcitabilityPre.scaled, 
+       labels = c("Low Excitability", "Average Excitability", "High Excitability"))
+
+gp <- ggplot(grmrecNonkin.plotdata, 
+       aes(x = grmrecNonkin.pre.scaled, y = grmrecNonkin.post.hat, 
+           colour = ExcitabilityPre.scaled, group = ExcitabilityPre.scaled))
+grmrecNonkin.plot <- gp + geom_line(aes(linetype = ExcitabilityPre.scaled), size = 1) + theme_bw() + 
+  xlab("Levels of Received Grooming from Kin (PreRemoval)") +
+  ylab("Levels of Received Grooming from Kin (PostRemoval)") + 
+  theme(text = element_text(size=11), axis.text.x = element_text(vjust=1), 
+        legend.position=c(0.20, 0.90), legend.text=element_text(size=10), 
+        legend.title=element_text(size=10),
+        strip.text = element_text(size = 10)) +
+  #eliminates background, gridlines, and chart border
+  theme(
+    plot.background = element_blank()
+    ,panel.grid.major = element_blank()
+    ,panel.grid.minor = element_blank()
+    ,panel.border = element_blank()
+  ) +
+  
+  #draws x and y axis line
+  theme(axis.line = element_line(color = 'black'))
+
+grmrecNonkin.plot
+```
