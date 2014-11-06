@@ -1,0 +1,79 @@
+---
+title: "DataCleaningforReanalysisAffiliationChange"
+author: "JJ"
+date: "October 21, 2014"
+output: html_document
+---
+
+What I'm trying to do is to make the long data into wide data format so that each ID is a row. 
+
+
+* import data
+```{r}
+
+maindata <- read.csv("./data/pcps.data.csv")
+sepVar <- read.csv("./data/SeparationVariableClean.csv")
+
+```
+
+* examine the data
+```{r, echo=FALSE}
+head(maindata)
+names(maindata)
+
+head(sepVar)
+names(sepVar)
+```
+
+* too many variables. I don't know what I'm going to do with all these.
+* step 1: work with the main data. save only useful variables
+* variables needed: ID, mat, sex, age, rank, grmini, grmini... [, c(13:21)]
+```{r, echo=FALSE}
+library(dplyr)
+maindata.cleanvar <- 
+  select(maindata, ID, Period, Matriline, Sex, Age, Rank, matches("grm|hud"))
+head(maindata.cleanvar)
+```
+
+* although the df maindata.cleanvar looks better, it is still too much and it requires different process of cleaning. 
+* I'll split it into two dfs, with the first one being attributes of IDs.
+
+```{r, echo=FALSE}
+attributes <- maindata.cleanvar %>% 
+  filter(Period == "PreRemoval") %>%
+  select(ID, Matriline, Sex, Age, Rank)
+
+names(attributes)
+write.csv(attributes, "./CleanData/attributes.csv", row.names = FALSE)
+```
+
+* ok, now the tough ones. first save the aff dataframe
+```{r, echo=FALSE}
+aff <- select(maindata.cleanvar, ID, Period, matches("grm|hud"))
+
+head(aff)
+names(aff)
+
+aff.pre <- aff %>%
+  filter(Period == "PreRemoval") %>%
+  select(ID, matches("grm|hud")) 
+names(aff.pre)
+names(aff.pre)[-1] <- paste(names(aff.pre)[-1], "pre", sep = ".")  
+names(aff.pre)
+
+
+
+aff.post <- aff %>%
+  filter(Period == "PostRemoval") %>%
+  select(ID, matches("grm|hud"))
+names(aff.post)[-1] <- paste(names(aff.post)[-1], "post", sep = ".")  
+names(aff.post)
+head(aff.post)
+
+
+aff.clean <- merge(aff.pre, aff.post, by = "ID")
+head(aff.clean)
+names(aff.clean)
+
+write.csv(aff.clean, "./CleanData/affClean.csv", row.names = FALSE)
+```
