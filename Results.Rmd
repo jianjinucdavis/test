@@ -2,7 +2,7 @@
 title: "WritingResultsSession"
 author: "JJ"
 date: "November 5, 2014"
-output: word_document
+output: html_document
 ---
 
 
@@ -13,21 +13,87 @@ output: word_document
 options(scipen = 1, digits = 2)
 ```
 
-```{r import data, echo=FALSE}
+```{r import library, echo=FALSE, include=FALSE}
 library(ggplot2)
 library(sjPlot)
 library(plyr); library(dplyr)
 library(reshape2)
-grmrec.df.scaled <- read.csv("./CleanData//grmrec.df.scaled.csv")
-hud.df.scaled <- read.csv("./CleanData//hud.df.scaled.csv")
 ```
 
 
-```{r, echo = FALSE, fig.height=5, fig.width=5}
-summary(grmrec.df.scaled)
-names(grmrec.df.scaled)
+```{r import data, echo=FALSE}
+grmrec.df.scaled <- read.csv("./CleanData//grmrec.df.scaled.csv")
+grmini.df.cleancol <- read.csv("./CleanData//grmini.df.cleancol.csv")
+```
 
-t.test(grmrec.df.scaled$grmrec.pre, grmrec.df.scaled$grmrec.post)
+```{r t-test, echo=FALSE, include=FALSE}
+grmrec.t <- t.test(grmrec.df.scaled$grmrec.pre, grmrec.df.scaled$grmrec.post)
+grmreckin.t <- t.test(grmrec.df.scaled$grmrecKin.pre, grmrec.df.scaled$grmrecKin.post)
+t.test(grmrec.df.scaled$grmrecNonkin.pre, grmrec.df.scaled$grmrecNonkin.post)
+t.test(grmini.df.cleancol$grmini.pre, grmini.df.cleancol$grmini.post)
+t.test(grmini.df.cleancol$grminiKin.pre, grmini.df.cleancol$grminiKin.post)
+grminiNonkin.t <- t.test(grmini.df.cleancol$grminiNonkin.pre, grmini.df.cleancol$grminiNonkin.post)
+
+```
+After social separation, all grooming behaviors decreased (ts >= `r grminiNonkin.t$statistic[[1]]`, ps < 0.05).
+
+```{r data mungling for ggplot2, echo = FALSE, include=FALSE}
+grmini.bar.data <- select(grmini.df.cleancol, matches("ID|grmini"), -ConfidencePre, ignore.case = TRUE)
+grmrec.bar.data <- select(grmrec.df.scaled, matches("ID|grmrec"), -matches("scaled|Confidence"))
+
+
+grm.bar.temp <- merge(grmini.bar.data, grmrec.bar.data, by = "ID")
+grm.bar <- grm.bar.temp[,-1]
+grm.bar.melted <- melt(grm.bar)
+var.name.temp <- as.data.frame(strsplit(as.character(grm.bar.melted$variable), "[.]"))
+
+var.name <- as.data.frame(t(var.name.temp))
+row.names(var.name) <- 1:nrow(var.name)
+as.character(var.name[,2])
+as.character(var.name[,2])
+grm.bar.df <- data.frame(var.behavior = as.character(var.name[,1]), 
+              var.period = as.character(var.name[,2]), 
+              Value = grm.bar.melted$value)
+
+```
+
+```{r plot:bar plot, echo=FALSE, fig.height=5, fig.width=8}
+levels(grm.bar.df$var.behavior) <- c("grooming", "grooming with kin", "grooming with non-kin", "received grooming", "received grooming with kin", "received grooming with nonkin")
+levels(grm.bar.df$var.period) <- c("social separation", "baseline")
+grm.bar.df$var.period <- relevel(grm.bar.df$var.period, ref = "baseline")
+
+gp <- ggplot(data = grm.bar.df, aes(y = Value, x = var.period))
+barplot <- gp + geom_boxplot() + facet_wrap( ~ var.behavior) + 
+  theme_bw() +
+  labs(title = "Grooming behavior before and after social separation",
+    x = "Period",
+       y = "Levels of grooming")
+
+barplot
+```
+
+```{r plot:regression, echo=FALSE}
+
+```
+
+```{r, echo=FALSE}
+plot <- ggplot(data = grmrec.df.scaled, aes(x = grmrec.pre, y = grmrec.post))
+Scatterplotgrmini <- plot + geom_point(shape = 1) + geom_smooth(method = lm) + 
+  xlab("Received Grooming before Removal") + ylab("Received Grooming after Removal") +
+  theme_classic() +
+  # font sizes
+  theme(
+    # axis label text size
+    text = element_text(size=12), axis.text.x = element_text(vjust=1), 
+    
+    legend.position=c(0.10, 0.90),
+    # legend text size
+    legend.text=element_text(size=10),
+    
+    legend.title=element_text(size=10),
+    strip.text = element_text(size = 10))
+Scatterplotgrmini
+
 
 plot <- ggplot(data = grmrec.df.scaled, aes(x = grmrec.pre, y = grmrec.post))
 Scatterplotgrmrec <- plot + geom_point(shape = 1) + geom_smooth(method = lm) + 
@@ -44,7 +110,4 @@ Scatterplotgrmrec <- plot + geom_point(shape = 1) + geom_smooth(method = lm) +
     
     legend.title=element_text(size=10),
     strip.text = element_text(size = 10))
-
-Scatterplotgrmrec
-
 ```
