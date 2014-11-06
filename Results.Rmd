@@ -54,7 +54,6 @@ as.character(var.name[,2])
 grm.bar.df <- data.frame(var.behavior = as.character(var.name[,1]), 
               var.period = as.character(var.name[,2]), 
               Value = grm.bar.melted$value)
-
 ```
 
 ```{r plot:bar plot, echo=FALSE, fig.height=5, fig.width=8}
@@ -72,15 +71,53 @@ barplot <- gp + geom_boxplot() + facet_wrap( ~ var.behavior) +
 barplot
 ```
 
-```{r plot:regression, echo=FALSE}
+to add to this:
+  scatter plots
+  regressions results
+  
+  social network matrices: personality x period --> betweenness/centrality
+  
 
+
+```{r scatter plots:Data mungling, echo=FALSE}
+head(grm.bar.temp)
+grm.scatter.melted <- melt(grm.bar.temp, id.vars = "ID")
+head(grm.scatter.melted)
+variable.name.temp <- as.data.frame(strsplit(as.character(grm.scatter.melted$variable), 
+                                             "[.]"))
+head(variable.name.temp)
+variable.name <- as.data.frame(t(variable.name.temp))
+row.names(variable.name) <- 1:nrow(variable.name)
+as.character(variable.name[,1])
+as.character(variable.name[,2])
+
+grm.scatter.temp1 <- data.frame(
+  ID = grm.scatter.melted$ID,
+  var.behavior = as.character(variable.name[,1]), 
+  var.period = as.character(variable.name[,2]), 
+  Value = grm.scatter.melted$value)
+head(grm.scatter.temp1)
+
+pre.df <- grm.scatter.temp1 %>% 
+  filter(var.period == "pre") %>%
+  rename(Value.pre = Value) %>%
+  select(-var.period)
+post.df <- grm.scatter.temp1 %>%
+  filter(var.period == "post") %>%
+  rename(Value.post = Value) %>%
+  select(-var.period)
+
+summary(pre.df)
+summary(post.df)
+grm.scatter.df <- merge(pre.df, post.df, by = c("ID", "var.behavior"))
+head(grm.scatter.df)
 ```
 
-```{r, echo=FALSE}
-plot <- ggplot(data = grmrec.df.scaled, aes(x = grmrec.pre, y = grmrec.post))
-Scatterplotgrmini <- plot + geom_point(shape = 1) + geom_smooth(method = lm) + 
+```{r, echo=FALSE, fig.width=8, fig.height=5}
+plot <- ggplot(data = grm.scatter.df, aes(x = Value.pre, y = Value.post))
+Scattergrm <- plot + geom_point(shape = 1) + geom_smooth(method = lm) + 
   xlab("Received Grooming before Removal") + ylab("Received Grooming after Removal") +
-  theme_classic() +
+  theme_classic() + facet_wrap(~ var.behavior) +
   # font sizes
   theme(
     # axis label text size
@@ -92,22 +129,6 @@ Scatterplotgrmini <- plot + geom_point(shape = 1) + geom_smooth(method = lm) +
     
     legend.title=element_text(size=10),
     strip.text = element_text(size = 10))
-Scatterplotgrmini
+Scattergrm
 
-
-plot <- ggplot(data = grmrec.df.scaled, aes(x = grmrec.pre, y = grmrec.post))
-Scatterplotgrmrec <- plot + geom_point(shape = 1) + geom_smooth(method = lm) + 
-  xlab("Received Grooming before Removal") + ylab("Received Grooming after Removal") +
-  theme_classic() +
-  # font sizes
-  theme(
-    # axis label text size
-    text = element_text(size=12), axis.text.x = element_text(vjust=1), 
-    
-    legend.position=c(0.10, 0.90),
-    # legend text size
-    legend.text=element_text(size=10),
-    
-    legend.title=element_text(size=10),
-    strip.text = element_text(size = 10))
 ```
