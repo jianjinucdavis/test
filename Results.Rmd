@@ -20,12 +20,12 @@ library(plyr); library(dplyr)
 library(reshape2)
 ```
 
-
 ```{r import data, echo=FALSE}
 grmrec.df.scaled <- read.csv("./CleanData//grmrec.df.scaled.csv")
 grmini.df.cleancol <- read.csv("./CleanData//grmini.df.cleancol.csv")
 ```
 
+### Descriptive Results: group-level changes
 ```{r t-test, echo=FALSE, include=FALSE}
 grmrec.t <- t.test(grmrec.df.scaled$grmrec.pre, grmrec.df.scaled$grmrec.post)
 grmreckin.t <- t.test(grmrec.df.scaled$grmrecKin.pre, grmrec.df.scaled$grmrecKin.post)
@@ -35,7 +35,7 @@ t.test(grmini.df.cleancol$grminiKin.pre, grmini.df.cleancol$grminiKin.post)
 grminiNonkin.t <- t.test(grmini.df.cleancol$grminiNonkin.pre, grmini.df.cleancol$grminiNonkin.post)
 
 ```
-After social separation, all grooming behaviors decreased (ts >= `r grminiNonkin.t$statistic[[1]]`, ps < 0.05).
+After social separation, all grooming behaviors decreased (ts >= `r grminiNonkin.t$statistic[[1]]`, ps < 0.05). However, the scatter plots showed that changes in grooming are not consistent across individuals, which indicates that individuals respond to social separation in different ways.
 
 ```{r data mungling for ggplot2, echo = FALSE, include=FALSE}
 grmini.bar.data <- select(grmini.df.cleancol, matches("ID|grmini"), -ConfidencePre, ignore.case = TRUE)
@@ -71,32 +71,22 @@ barplot <- gp + geom_boxplot() + facet_wrap( ~ var.behavior) +
 barplot
 ```
 
-to add to this:
-  scatter plots
-  regressions results
-  
-  social network matrices: personality x period --> betweenness/centrality
-  
+```{r scatter plots:Data mungling, echo=FALSE, include=FALSE}
 
-
-```{r scatter plots:Data mungling, echo=FALSE}
-head(grm.bar.temp)
 grm.scatter.melted <- melt(grm.bar.temp, id.vars = "ID")
-head(grm.scatter.melted)
+
 variable.name.temp <- as.data.frame(strsplit(as.character(grm.scatter.melted$variable), 
                                              "[.]"))
-head(variable.name.temp)
+
 variable.name <- as.data.frame(t(variable.name.temp))
 row.names(variable.name) <- 1:nrow(variable.name)
-as.character(variable.name[,1])
-as.character(variable.name[,2])
 
 grm.scatter.temp1 <- data.frame(
   ID = grm.scatter.melted$ID,
   var.behavior = as.character(variable.name[,1]), 
   var.period = as.character(variable.name[,2]), 
   Value = grm.scatter.melted$value)
-head(grm.scatter.temp1)
+
 
 pre.df <- grm.scatter.temp1 %>% 
   filter(var.period == "pre") %>%
@@ -106,18 +96,14 @@ post.df <- grm.scatter.temp1 %>%
   filter(var.period == "post") %>%
   rename(Value.post = Value) %>%
   select(-var.period)
-
-summary(pre.df)
-summary(post.df)
 grm.scatter.df <- merge(pre.df, post.df, by = c("ID", "var.behavior"))
-head(grm.scatter.df)
 ```
 
-```{r, echo=FALSE, fig.width=8, fig.height=5}
+```{r scatter plots, echo=FALSE, fig.width=8, fig.height=5}
 plot <- ggplot(data = grm.scatter.df, aes(x = Value.pre, y = Value.post))
 Scattergrm <- plot + geom_point(shape = 1) + geom_smooth(method = lm) + 
   xlab("Received Grooming before Removal") + ylab("Received Grooming after Removal") +
-  theme_classic() + facet_wrap(~ var.behavior) +
+  theme_bw() + facet_wrap(~ var.behavior) +
   # font sizes
   theme(
     # axis label text size
@@ -132,3 +118,131 @@ Scattergrm <- plot + geom_point(shape = 1) + geom_smooth(method = lm) +
 Scattergrm
 
 ```
+To understand whether or not personality explained the unshared variance between grooming behaviors before and after social separation, linear regression was used to predict post-removal levels of grooming using all three personality factors, controlling for pre-removal levels of grooming. Age, sex, rank, and relatedness did not predict post-removal levels of grooming in any models, nor increase the model fit significant. 
+
+
+```{r regression results}
+grmrec.personality.scaled.lm <- lm(grmrec.post ~ grmrec.pre.scaled + 
+                          ExcitabilityPre.scaled  + SociabilityPre.scaled
+                          + ConfidencePre.scaled * grmrec.pre.scaled ,
+                        data = grmrec.df.scaled)
+```
+Preremoval levels of received grooming positively predicted post-removal levels of received grooming, but this effect depends on Confidence personality (B = `r grmrec.personality.scaled.lm$coefficients[[6]]`, p = `r summary(grmrec.personality.scaled.lm)[[4]][6,4]`). For each increase in pre-removal levels of received grooming, post-removal levels of received grooming was expected to increase `r grmrec.personality.scaled.lm$coefficients[[2]]`. But for each increase in Confidence, post-removal levels of received grooming was expected to increase `r grmrec.personality.scaled.lm$coefficients[[6]]` more. This indicates that pre-removal levels of received grooming is a better predictor for post-removal levels of received grooming for highly confident individuals. After social separation, compared with less confident individuals, highly confident individuals were able to maintain a level of received grooming that is closer to the level of received grooming before social separation. 
+
+```{r: plot the Confidence x grmrec.pre: new data, echo=FALSE}
+#New data
+newgrmrec.personality <- expand.grid(grmrec.pre.scaled = -1:1, 
+                       SociabilityPre.scaled = -1:1, 
+                       ConfidencePre.scaled = -1:1, 
+                       ExcitabilityPre.scaled = -1:1)
+
+#### predict y-hat
+grmrec.post.hat <- predict(grmrec.personality.scaled.lm, newgrmrec.personality)
+newgrmrec.personality.predict <- cbind(grmrec.post.hat, newgrmrec.personality)
+
+#### plot interaction between ConfidencePre and grmrec.pre
+grmrec.post.newdata <- aggregate(grmrec.post.hat ~ 
+                                   ConfidencePre.scaled + grmrec.pre.scaled, 
+                              newgrmrec.personality.predict, mean)
+
+grmrec.post.newdata$ConfidencePre.scaled <- 
+  factor(grmrec.post.newdata$ConfidencePre.scaled,
+                                          labels = c("Low Confidence", 
+                                                     "Average Confidence", 
+                                                     "High Confidence"))
+```
+
+```{r plot the Confidence x grmrec.pre, echo=FALSE}
+#### plotting
+gp <- ggplot(grmrec.post.newdata, 
+             aes(x = grmrec.pre.scaled, y = grmrec.post.hat, 
+                 colour = ConfidencePre.scaled, group = ConfidencePre.scaled))
+
+grmrec.plot <- gp + 
+  geom_line(aes(linetype = ConfidencePre.scaled), size = 1) + 
+  theme_bw() + 
+  xlab("Levels of Received Grooming (PreRemoval)") +
+  ylab("Levels of Received Grooming (PostRemoval)") + 
+  theme(text = element_text(size=11), axis.text.x = element_text(vjust=1), 
+        legend.position=c(0.20, 0.90), legend.text=element_text(size=10), 
+        legend.title=element_text(size=10),
+        strip.text = element_text(size = 10)) +
+  #eliminates background, gridlines, and chart border
+  theme(
+    plot.background = element_blank()
+    ,panel.grid.major = element_blank()
+    ,panel.grid.minor = element_blank()
+    ,panel.border = element_blank()
+  ) +
+  
+  #draws x and y axis line
+  theme(axis.line = element_line(color = 'black'))
+
+grmrec.plot
+```
+
+```{r centered model_groom received from nonkin, echo=FALSE}
+grmrecNonkin.personality.scaled.lm <- 
+  lm(grmrecNonkin.post ~ grmrecNonkin.pre.scaled + 
+       ExcitabilityPre.scaled * grmrecNonkin.pre.scaled +
+       ConfidencePre.scaled  + SociabilityPre.scaled, 
+     data = grmrec.df.scaled)
+```
+`r sjt.lm(grmrecNonkin.personality.scaled.lm, no.output = TRUE)$knitr`
+The effects of pre-removal levels of received grooming from kin on post-removal levels of received grooming from kin depend on individuals' Excitability (b = `r grmrecNonkin.personality.scaled.lm$coefficients[[6]]`, p = `r summary(grmrecNonkin.personality.scaled.lm)[[4]][6,4]`). For each increase in Excitability, post-removal levels of received grooming from kin is expected to increase `r grmrecNonkin.personality.scaled.lm$coefficients[[6]]` more with each increase in pre-removal levels of received grooming from kin. This indicates that compared with less excitable individuals, highly excitable individuals received levels of received grooming from kin that is closer to the pre-removal level after social separation. 
+
+Between matriline, highly excitable individuals received more grooming from animals from other matrilines. Its underlying mechanism may be differed from that underlying the phenomenon that highly confident i9ndividuals received more grooming across matrilines. 
+
+```{r Plotting groom receive from nonkin, echo=FALSE}
+# new data
+grmrecNonkin.newdata <- expand.grid(grmrecNonkin.pre.scaled = -1:1,
+                                    ExcitabilityPre.scaled = -1:1,
+                                    ConfidencePre.scaled = -1:1,
+                                    SociabilityPre.scaled = -1:1)
+
+grmrecNonkin.post.hat <- 
+  predict(grmrecNonkin.personality.scaled.lm, grmrecNonkin.newdata)
+
+grmrecNonkin.newdata.predicted <- 
+  cbind(grmrecNonkin.post.hat, grmrecNonkin.newdata)
+
+# aggregate
+grmrecNonkin.plotdata <- aggregate(grmrecNonkin.post.hat ~ 
+            ExcitabilityPre.scaled + grmrecNonkin.pre.scaled,
+          grmrecNonkin.newdata.predicted, mean)
+
+grmrecNonkin.plotdata$ExcitabilityPre.scaled <- 
+  factor(grmrecNonkin.plotdata$ExcitabilityPre.scaled, 
+       labels = c("Low Excitability", "Average Excitability", "High Excitability"))
+
+gp <- ggplot(grmrecNonkin.plotdata, 
+       aes(x = grmrecNonkin.pre.scaled, y = grmrecNonkin.post.hat, 
+           colour = ExcitabilityPre.scaled, group = ExcitabilityPre.scaled))
+grmrecNonkin.plot <- gp + geom_line(aes(linetype = ExcitabilityPre.scaled), size = 1) + theme_bw() + 
+  xlab("Levels of Received Grooming from Kin (PreRemoval)") +
+  ylab("Levels of Received Grooming from Kin (PostRemoval)") + 
+  theme(text = element_text(size=11), axis.text.x = element_text(vjust=1), 
+        legend.position=c(0.20, 0.90), legend.text=element_text(size=10), 
+        legend.title=element_text(size=10),
+        strip.text = element_text(size = 10)) +
+  #eliminates background, gridlines, and chart border
+  theme(
+    plot.background = element_blank()
+    ,panel.grid.major = element_blank()
+    ,panel.grid.minor = element_blank()
+    ,panel.border = element_blank()
+  ) +
+  
+  #draws x and y axis line
+  theme(axis.line = element_line(color = 'black'))
+
+grmrecNonkin.plot
+```
+
+
+
+to add to this:
+  regressions results
+  
+  social network matrices: personality x period --> betweenness/centrality
+  
